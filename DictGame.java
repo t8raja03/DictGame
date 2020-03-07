@@ -5,6 +5,11 @@
  * Harjoitustyö
  *********************************/
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Scanner;
+
 import javafx.animation.* ;  // AnimationTimer, etc.
 import javafx.util.Duration;
 import javafx.application.Application;
@@ -57,6 +62,50 @@ class FallingWord extends StackPane
         setLayoutY(0);
         setLayoutX(randomX());
         bg.setFill(Color.WHITE);
+
+
+    }
+}
+
+class Dictionary
+{
+    File dictionary = new File("./dictionary");
+
+    int dictSize = 0;
+
+    ArrayList<QWord> dictArray = new ArrayList<QWord>();
+
+    public void load() {
+
+        try{
+            Scanner scanner = new Scanner(dictionary);
+            while (scanner.hasNextLine()) {
+                QWord newWord = new QWord(scanner.nextLine(), scanner.nextLine());
+                dictArray.add(newWord);
+                System.out.println(newWord.print());
+            }
+            scanner.close();
+
+        } catch(FileNotFoundException e) {
+            System.out.println("Virhe sanakirjaa luettaessa!");
+            e.printStackTrace();
+        }
+
+    }
+}
+
+class QWord
+{
+    String q = "";
+    String a = "";
+
+    public QWord(String question, String answer) {
+        q = question;
+        a = answer;
+    }
+
+    public String print() {
+        return q + " = " + a;
     }
 }
 
@@ -84,6 +133,8 @@ public class DictGame extends Application
         Rectangle selection_area = new Rectangle(10, 650, SCENE_WIDTH-20, 80);
         selection_area.setFill(Color.ANTIQUEWHITE);
 
+        Dictionary d = new Dictionary();
+        d.load();
         
         // Putoavan sanan määrittely:
         Circle word_Circle = new Circle(60, 60, 30, Color.WHITE);
