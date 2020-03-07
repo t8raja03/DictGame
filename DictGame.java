@@ -24,25 +24,41 @@ import javafx.scene.text.Text;
 import javafx.geometry.* ; // Point2D, etc.
 import javafx.stage.Stage;
 
+
+
+
+
 class FallingWord extends StackPane
 {
 
     int low_bound;
 
-    Circle bg;
+    int out_bound;
 
-    Text text;
+    Circle bg = new Circle();
 
-    public FallingWord(Circle circle, Text t, int lower_limit) {
+    Text text = new Text();
+
+    QWord word = new QWord();
+
+    Dictionary dict;
+
+    ChoiceButtons buttons;
+    
+    public FallingWord(Dictionary d, int lower_limit, int out_limit) {
         low_bound = lower_limit;
-        bg = circle;
-        text = t;
+        out_bound = out_limit;
+        dict = d;
 
+        buttons = new ChoiceButtons(10, 650, 580, 80, dict);
+        
         newWord();
+        
+        getChildren().addAll(bg, text);
     }
 
     public int randomX() {
-        return (int)(Math.random() * (600 - bg.getRadius()*2));
+        return (int)(Math.random() * (600 - (bg.getRadius()*4)) + (bg.getRadius()*2));
     }
 
     public void drop(double velocity) {
@@ -53,7 +69,7 @@ class FallingWord extends StackPane
             bg.setFill(Color.RED);
         }
 
-        if (getLayoutY() >= 800) {
+        if (getLayoutY() >= out_bound) {
             newWord();
         }
     }
@@ -63,17 +79,39 @@ class FallingWord extends StackPane
         setLayoutX(randomX());
         bg.setFill(Color.WHITE);
 
+        word = dict.getRandomWord();
 
+        text.setText(word.getQ());
+
+        text.setFont(Font.font(16));
+        bg.setRadius(text.getLayoutBounds().getWidth() / 2 + 10);
+
+        buttons.update();
+    }
+
+    public String getWrongAnswer() {
+        return dict.getWrongAnswer();
+    }
+
+    public String getA() {
+        return word.getA();
     }
 }
+
+
+
+
+
+
 
 class Dictionary
 {
     File dictionary = new File("./dictionary");
 
-    int dictSize = 0;
-
     ArrayList<QWord> dictArray = new ArrayList<QWord>();
+
+    int oldIndex;
+    int newIndex;
 
     public void load() {
 
@@ -92,12 +130,45 @@ class Dictionary
         }
 
     }
+
+    public QWord getRandomWord() {
+        do {
+            newIndex = (int)(Math.random() * dictArray.size());
+        } while (newIndex == oldIndex);
+
+        oldIndex = newIndex;
+
+        return dictArray.get(newIndex);
+    }
+
+    public String getWrongAnswer() {
+
+        int index;
+
+        do {
+            index = (int)(Math.random() * dictArray.size());
+        } while (index == oldIndex);
+
+        return dictArray.get(index).getA();
+    }
+
+    public String getCorrectAnswer() {
+        return dictArray.get(oldIndex).getA();
+    }
 }
+
+
+
+
 
 class QWord
 {
     String q = "";
     String a = "";
+
+    public QWord() {
+
+    }
 
     public QWord(String question, String answer) {
         q = question;
@@ -107,7 +178,109 @@ class QWord
     public String print() {
         return q + " = " + a;
     }
+
+    public String getQ() {
+        return q;
+    }
+
+    public String getA() {
+        return a;
+    }
 }
+
+
+
+
+class ChoiceButtons extends StackPane
+{
+    StackPane button1 = new StackPane();
+    StackPane button2 = new StackPane();
+    StackPane button3 = new StackPane();
+
+    Rectangle bg1 = new Rectangle();
+    Rectangle bg2 = new Rectangle();
+    Rectangle bg3 = new Rectangle();
+
+    static Text t1 = new Text();
+    static Text t2 = new Text();
+    static Text t3 = new Text();
+
+    int correct_button;
+
+    int padding = 10;
+
+    Dictionary d;
+
+    public ChoiceButtons(int x, int y, int w, int h, Dictionary dict) {
+        
+        d = dict;
+
+        update();
+
+        bg1.setWidth((w - (4 * padding)) / 3);
+        bg1.setHeight(h - (2 * padding));
+        bg1.setFill(Color.WHITE);
+        bg1.setStroke(Color.BLACK);
+        bg1.setArcHeight(15);
+        bg1.setArcWidth(15);
+        
+        t1.setFont(Font.font(18));
+        button1.getChildren().addAll(bg1, t1);
+        button1.setLayoutX(x + padding);
+        button1.setLayoutY(y + padding);
+
+        bg2.setWidth((w - (4 * padding)) / 3);
+        bg2.setHeight(h - (2 * padding));
+        bg2.setFill(Color.WHITE);
+        bg2.setStroke(Color.BLACK);
+        bg2.setArcHeight(15);
+        bg2.setArcWidth(15);
+
+        t2.setFont(Font.font(18));
+        button2.getChildren().addAll(bg2, t2);
+        button2.setLayoutX(x + bg1.getWidth() + 2 * padding);
+        button2.setLayoutY(y + padding);
+
+        bg3.setWidth((w - (4 * padding)) / 3);
+        bg3.setHeight(h - (2 * padding));
+        bg3.setFill(Color.WHITE);
+        bg3.setStroke(Color.BLACK);
+        bg3.setArcHeight(15);
+        bg3.setArcWidth(15);
+
+        t3.setFont(Font.font(18));
+        button3.getChildren().addAll(bg3, t3);
+        button3.setLayoutX(x + bg1.getWidth() + bg2.getWidth() + 3 * padding);
+        button3.setLayoutY(y + padding);
+
+    }
+
+    public void update() { 
+
+        correct_button = (int)Math.random() * 3 + 1;
+
+        if (correct_button == 1) {
+            t1.setText(d.getCorrectAnswer());
+            t2.setText(d.getWrongAnswer());
+            t3.setText(d.getWrongAnswer());
+        }
+        else if (correct_button == 2) {
+            t1.setText(d.getWrongAnswer());
+            t2.setText(d.getCorrectAnswer());
+            t3.setText(d.getWrongAnswer());
+        }
+        else if (correct_button == 3) {
+            t1.setText(d.getWrongAnswer());
+            t2.setText(d.getWrongAnswer());
+            t3.setText(d.getCorrectAnswer());
+        }
+    }
+    
+}
+
+
+
+
 
 public class DictGame extends Application
 {
@@ -116,7 +289,15 @@ public class DictGame extends Application
 
     double SPEED = 1.0;
 
+    int padding = 10;
+
     AnimationTimer animationTimer;
+
+    Dictionary d = new Dictionary();
+
+    FallingWord word;
+
+    ChoiceButtons buttons;
     
     public void start(Stage stage) {
         
@@ -128,24 +309,23 @@ public class DictGame extends Application
 
         scene.setFill(Color.LIGHTGREEN);
 
+        d.load();
+
         // Valinta-alueen tausta:
 
-        Rectangle selection_area = new Rectangle(10, 650, SCENE_WIDTH-20, 80);
-        selection_area.setFill(Color.ANTIQUEWHITE);
+        Rectangle selection_bg = new Rectangle(10, 650, SCENE_WIDTH-20, 80);
+        selection_bg.setFill(Color.ANTIQUEWHITE);
+        selection_bg.setArcHeight(15);
+        selection_bg.setArcWidth(15);
 
-        Dictionary d = new Dictionary();
-        d.load();
-        
-        // Putoavan sanan määrittely:
-        Circle word_Circle = new Circle(60, 60, 30, Color.WHITE);
-        Text word_Text = new Text("Testi");
-        FallingWord word = new FallingWord(word_Circle, word_Text, (int)selection_area.getY());
+        // Valintanappien luonti
+//        buttons = new ChoiceButtons(10, 650, SCENE_WIDTH-20, 80, word);
 
-        word_Text.setFont(Font.font(16));
-        word_Circle.setRadius(word_Text.getLayoutBounds().getWidth() / 2 + 10);
-        word.getChildren().addAll(word_Circle, word_Text);
+        // Luodaan putoava sana-olio
+        word = new FallingWord(d, (int)selection_bg.getY(), SCENE_HEIGHT);
 
-        ui_group.getChildren().addAll(word, selection_area);
+        // Putoava sana jää valinta-alueen taakse
+        ui_group.getChildren().addAll(word, selection_bg, word.buttons.button1, word.buttons.button2, word.buttons.button3);
 
         stage.setScene(scene);
         stage.show();
