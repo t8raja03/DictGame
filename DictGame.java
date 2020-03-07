@@ -19,15 +19,56 @@ import javafx.scene.text.Text;
 import javafx.geometry.* ; // Point2D, etc.
 import javafx.stage.Stage;
 
+class FallingWord extends StackPane
+{
+
+    int low_bound;
+
+    Circle bg;
+
+    Text text;
+
+    public FallingWord(Circle circle, Text t, int lower_limit) {
+        low_bound = lower_limit;
+        bg = circle;
+        text = t;
+
+        newWord();
+    }
+
+    public int randomX() {
+        return (int)(Math.random() * (600 - bg.getRadius()*2));
+    }
+
+    public void drop(double velocity) {
+
+        setLayoutY(getLayoutY() + velocity);
+
+        if (getLayoutY() >= low_bound) {
+            bg.setFill(Color.RED);
+        }
+
+        if (getLayoutY() >= 800) {
+            newWord();
+        }
+    }
+
+    public void newWord() {
+        setLayoutY(0);
+        setLayoutX(randomX());
+        bg.setFill(Color.WHITE);
+    }
+}
+
 public class DictGame extends Application
 {
     static final int SCENE_WIDTH = 600;
     static final int SCENE_HEIGHT = 800;
 
-    double SPEED = 0.5;
+    double SPEED = 1.0;
 
     AnimationTimer animationTimer;
-
+    
     public void start(Stage stage) {
         
         Group ui_group = new Group();
@@ -38,17 +79,22 @@ public class DictGame extends Application
 
         scene.setFill(Color.LIGHTGREEN);
 
-        Rectangle selection_area = new Rectangle(10, 710, SCENE_WIDTH-20, 80);
+        // Valinta-alueen tausta:
+
+        Rectangle selection_area = new Rectangle(10, 650, SCENE_WIDTH-20, 80);
         selection_area.setFill(Color.ANTIQUEWHITE);
 
+        
+        // Putoavan sanan määrittely:
         Circle word_Circle = new Circle(60, 60, 30, Color.WHITE);
-        Text word_Text = new Text("Testipitkästilitaniaa");
+        Text word_Text = new Text("Testi");
+        FallingWord word = new FallingWord(word_Circle, word_Text, (int)selection_area.getY());
+
         word_Text.setFont(Font.font(16));
         word_Circle.setRadius(word_Text.getLayoutBounds().getWidth() / 2 + 10);
-        StackPane stack = new StackPane();
-        stack.getChildren().addAll(word_Circle, word_Text);
+        word.getChildren().addAll(word_Circle, word_Text);
 
-        ui_group.getChildren().addAll(selection_area, stack);
+        ui_group.getChildren().addAll(word, selection_area);
 
         stage.setScene(scene);
         stage.show();
@@ -57,12 +103,18 @@ public class DictGame extends Application
         
             @Override
             public void handle(long now) {
-                stack.setLayoutY(stack.getLayoutY() + SPEED);
+                
+                word.drop(SPEED);
+
             }
         };
 
         animationTimer.start();
+
+        
     }
+
+
 
     public static void main(String[] command_line_parameters) {
 
