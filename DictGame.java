@@ -9,14 +9,18 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 
 import javafx.animation.* ;  // AnimationTimer, etc.
 import javafx.util.Duration;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -35,6 +39,8 @@ class QWord
 {
     String q = "";
     String a = "";
+
+    boolean mastered = false;
 
     public QWord() {
 
@@ -55,6 +61,14 @@ class QWord
 
     public String getA() {
         return a;
+    }
+
+    public boolean isMastered() {
+        return mastered;
+    }
+
+    public void setMastered() {
+        mastered = true;
     }
 
 }
@@ -89,14 +103,32 @@ class Dictionary
 
     }
 
-    public QWord getRandomWord() {
-        do {
-            newIndex = (int)(Math.random() * dictArray.size());
-        } while (newIndex == oldIndex);
+    public QWord getNewWord() {
+        
+        boolean allMastered = true;
+        
+        for (int j=0; j<dictArray.size(); j++) {
+            if (dictArray.get(j).isMastered() == false)
+                allMastered = false;
+        }
 
-        oldIndex = newIndex;
 
-        return dictArray.get(newIndex);
+        if (allMastered == true) {
+            reset();
+            DictGame.SPEED += 0.4;
+            DictGame.LEVEL++;
+        }
+            do {
+                do {
+                    newIndex = (int)(Math.random() * dictArray.size());
+                } while (newIndex == oldIndex);
+            } while (dictArray.get(newIndex).isMastered() == true);
+
+            oldIndex = newIndex;
+
+            return dictArray.get(newIndex);
+        
+
     }
 
     public String getWrongAnswer() {
@@ -112,6 +144,21 @@ class Dictionary
 
     public String getCorrectAnswer() {
         return dictArray.get(oldIndex).getA();
+    }
+
+    public boolean isMastered() {
+        return dictArray.get(oldIndex).isMastered();
+    }
+
+    public void setMastered() {
+        dictArray.get(oldIndex).setMastered();
+        System.out.println(dictArray.get(oldIndex).getQ() + " mastered!");
+    }
+
+    public void reset() {
+        for (int j=0; j<dictArray.size(); j++) {
+            dictArray.get(j).mastered = false;
+        }
     }
 }
 
@@ -184,16 +231,16 @@ class FallingWord extends StackPane
         DictGame.qspeed = DictGame.SPEED;
 
         setLayoutY(0);
-        setLayoutX(randomX());
         bg.setFill(Color.WHITE);
 
-        word = dict.getRandomWord();
+        word = dict.getNewWord();
 
         text.setText(word.getQ());
 
         text.setFont(Font.font(20));
         bg.setRadius(text.getLayoutBounds().getWidth() / 2 + 10);
-
+        setLayoutX(randomX());
+        
         buttons.update();
     }
 
@@ -222,6 +269,8 @@ class ChoiceButtons extends StackPane
     static Text t1 = new Text();
     static Text t2 = new Text();
     static Text t3 = new Text();
+
+    Text scoreText = new Text();
 
     int correct_button;
 
@@ -274,6 +323,13 @@ class ChoiceButtons extends StackPane
         button3.setLayoutX(x + bg1.getWidth() + bg2.getWidth() + 3 * padding);
         button3.setLayoutY(y + padding);
 
+/*         scoreText.setText("Taso " + Integer.toString(DictGame.LEVEL) + "  Pisteet: " + Integer.toString(DictGame.SCORE));
+        scoreText.setFont(Font.font(14));
+        scoreText.setX(DictGame.SCENE_WIDTH - scoreText.getLayoutBounds().getWidth() - 5);
+        scoreText.setY(DictGame.SCENE_HEIGHT - scoreText.getLayoutBounds().getHeight() - 5); */
+
+
+        //--------------- Toiminnot -------------------------
         //---------------- Nappi 1: -------------------------
         button1.setOnMouseEntered( (MouseEvent event) ->
         {
@@ -295,10 +351,13 @@ class ChoiceButtons extends StackPane
             if (correct_button == 1) {
                 bg1.setFill(Color.GREEN);
                 correct_answer = true;
+                d.setMastered();
+                DictGame.SCORE += (10*DictGame.LEVEL);
                 DictGame.quickdrop = true;
             }
             else {
                 bg1.setFill(Color.RED);
+                DictGame.SCORE -= 20;
             }
         }
         );
@@ -325,10 +384,13 @@ class ChoiceButtons extends StackPane
             if (correct_button == 2) {
                 bg2.setFill(Color.GREEN);
                 correct_answer = true;
+                d.setMastered();
+                DictGame.SCORE += (10*DictGame.LEVEL);
                 DictGame.quickdrop = true;
             }
             else {
                 bg2.setFill(Color.RED);
+                DictGame.SCORE -= 20;
             }
         }
         );
@@ -356,10 +418,13 @@ class ChoiceButtons extends StackPane
             if (correct_button == 3) {
                 bg3.setFill(Color.GREEN);
                 correct_answer = true;
+                d.setMastered();
+                DictGame.SCORE += (10*DictGame.LEVEL);
                 DictGame.quickdrop = true;
             }
             else {
                 bg3.setFill(Color.RED);
+                DictGame.SCORE -= 20;
             }
         }
         );
@@ -392,6 +457,11 @@ class ChoiceButtons extends StackPane
         bg1.setFill(Color.WHITE);
         bg2.setFill(Color.WHITE);
         bg3.setFill(Color.WHITE);
+
+        scoreText.setText("Taso " + Integer.toString(DictGame.LEVEL) + "  Pisteet: " + Integer.toString(DictGame.SCORE));
+        scoreText.setFont(Font.font(16));
+        scoreText.setX(DictGame.SCENE_WIDTH - scoreText.getLayoutBounds().getWidth() - 5);
+        scoreText.setY(DictGame.SCENE_HEIGHT - scoreText.getLayoutBounds().getHeight() - 5);
     }
     
 }
@@ -407,12 +477,13 @@ public class DictGame extends Application
     static final int SCENE_WIDTH = 600;
     static final int SCENE_HEIGHT = 1000;
 
-    static double SPEED = 0.5;
+    static double SPEED = 0.2;
     static double qspeed;
 
     static boolean quickdrop = false;
 
-    int padding = 10;
+    static int SCORE = 100;
+    static int LEVEL = 1;
 
     AnimationTimer animationTimer;
 
@@ -450,7 +521,7 @@ public class DictGame extends Application
         word = new FallingWord(d, (int)selection_bg.getY(), SCENE_HEIGHT);
 
         // Putoava sana jää valinta-alueen taakse
-        ui_group.getChildren().addAll(word, selection_bg, word.buttons.button1, word.buttons.button2, word.buttons.button3);
+        ui_group.getChildren().addAll(word, selection_bg, word.buttons.button1, word.buttons.button2, word.buttons.button3, word.buttons.scoreText);
 
         stage.setScene(scene);
         stage.show();
@@ -471,10 +542,57 @@ public class DictGame extends Application
         };
 
         animationTimer.start();
+        
+        
+        scene.setOnKeyPressed( (KeyEvent e) ->
+        {
+            if (e.getCode() == KeyCode.DIGIT1 || e.getCode() == KeyCode.NUMPAD1) {
+                word.buttons.button_clicked = true;
+                if (word.buttons.correct_button == 1) {
+                    word.buttons.bg1.setFill(Color.GREEN);
+                    word.buttons.correct_answer = true;
+                    word.dict.setMastered();
+                    SCORE += (10*DictGame.LEVEL);
+                    quickdrop = true;
+                }
+                else {
+                    word.buttons.bg1.setFill(Color.RED);
+                    SCORE -= 20;
+                }
+            }
+            else if (e.getCode() == KeyCode.DIGIT2 || e.getCode() == KeyCode.NUMPAD2) {
+                word.buttons.button_clicked = true;
+                if (word.buttons.correct_button == 2) {
+                    word.buttons.bg2.setFill(Color.GREEN);
+                    word.buttons.correct_answer = true;
+                    word.dict.setMastered();
+                    SCORE += (10*DictGame.LEVEL);
+                    quickdrop = true;
+                }
+                else {
+                    word.buttons.bg2.setFill(Color.RED);
+                    SCORE -= 20;
+                }
+            }
+            else if (e.getCode() == KeyCode.DIGIT3 || e.getCode() == KeyCode.NUMPAD3) {
+                word.buttons.button_clicked = true;
+                if (word.buttons.correct_button == 3) {
+                    word.buttons.bg3.setFill(Color.GREEN);
+                    word.buttons.correct_answer = true;
+                    word.dict.setMastered();
+                    SCORE += (10*DictGame.LEVEL);
+                    quickdrop = true;
+                }
+                else {
+                    word.buttons.bg3.setFill(Color.RED);
+                    SCORE -= 20;
+                }
+            }
 
+        }
+        );
         
     }
-
 
 
     public static void main(String[] command_line_parameters) {
