@@ -37,6 +37,12 @@ import javafx.stage.Stage;
 
 class QWord
 {
+    /***************************************************************
+     * QWord-luokka on sanojen tai tarkemmin sana-suomennos (tai
+     * sana-englanninnos) -pari. Sisältää myös tiedon, onko kyseiseen
+     * sanaan osattu vastata oikein.
+     *************************************************************/
+
     String q = "";
     String a = "";
 
@@ -52,22 +58,27 @@ class QWord
     }
 
     public String print() {
+        // Debuggausta varten, tulostaa "sana = käännös" komentoriville
         return q + " = " + a;
     }
 
     public String getQ() {
+        // Palauttaa kysymyksen Stringinä
         return q;
     }
 
     public String getA() {
+        // Palauttaa vastauksen (käännöksen) Stringinä
         return a;
     }
 
     public boolean isMastered() {
+        // Onko sana osattu
         return mastered;
     }
 
     public void setMastered() {
+        // Merkitsee sanan osatuksi
         mastered = true;
     }
 
@@ -78,14 +89,28 @@ class QWord
 
 class Dictionary
 {
+    /******************************************** 
+     * Dictionary-luokka on sanakirjan käsittelyä
+     * varten. Lataa tiedostosta sanakirjan ArrayListiin,
+     * joka sisältää QWord-olioita.
+     * 
+     * dictionary-tiedosto sisältää sana-käännöspareja,
+     * parittomilla riveillä on sana (="kysymys") ja 
+     * parillisilla käännös (="vastaus").
+     * 
+     * 
+    *********************************************/
+
     File dictionary = new File("./dictionary");
 
     ArrayList<QWord> dictArray = new ArrayList<QWord>();
 
-    int oldIndex;
-    int newIndex;
+    int oldIndex; //parhaillaan kysyttävän sanan indeksi
+    int newIndex; //seuraavan sanan arpomisessa käytettävä väliaikainen indeksi
 
     public void load() {
+
+        // Lataa sanakirjan tiedostosta taulukkoon käyttäen Scanner-luokkaa
 
         try{
             Scanner scanner = new Scanner(dictionary);
@@ -104,6 +129,12 @@ class Dictionary
     }
 
     public QWord getNewWord() {
+
+        // Arpoo sanakirjasta uuden kysyttävän sanan ja 
+        // palauttaa kyseisen QWord-olion.
+        // Tarkistaa ensin, onko sanakirjassa käytössä
+        // olevalla vaikeustasolla sanoja, joihin ei ole
+        // vielä vastattu oikein.
         
         boolean allMastered = true;
         
@@ -133,6 +164,9 @@ class Dictionary
 
     public String getWrongAnswer() {
 
+        // Palauttaa väärän vastauksen,
+        // käytetään nappien teksteihin
+
         int index;
 
         do {
@@ -141,6 +175,10 @@ class Dictionary
 
         return dictArray.get(index).getA();
     }
+
+    // Nämä metodit yksinkertaistavat QWord-olioiden käsittelyä,
+    // ei tarvitse välittää kyseistä QWordia parametrina oliolle,
+    // vaan siihen päästään käsiksi Dictionaryn kautta
 
     public String getCorrectAnswer() {
         return dictArray.get(oldIndex).getA();
@@ -156,6 +194,9 @@ class Dictionary
     }
 
     public void reset() {
+
+        // Poistaa merkinnät sanojen osaamisesta kaikista sanakirjan sanoista
+
         for (int j=0; j<dictArray.size(); j++) {
             dictArray.get(j).mastered = false;
         }
@@ -168,16 +209,19 @@ class Dictionary
 
 class FallingWord extends StackPane
 {
+    /****************************************************
+     * FallingWord-luokassa luodaan putoava sana sekä
+     * vastausnapit.
+     ****************************************************/
 
-    int low_bound;
+    int low_bound;  // Alaraja, jossa sana vaihtaa väriä pudotessaan
 
-    int out_bound;
+    int out_bound;  // Sanan vaihtumisen raja
 
     Circle bg = new Circle();
     DropShadow fwshadow = new DropShadow();
 
     Text text = new Text();
-
 
     QWord word = new QWord();
 
@@ -210,6 +254,8 @@ class FallingWord extends StackPane
 
     public void drop(double velocity) {
 
+        // Sanan putoamisen animointi
+
         setLayoutY(getLayoutY() + velocity);
 
         if (getLayoutY() >= low_bound) {
@@ -228,6 +274,8 @@ class FallingWord extends StackPane
 
     public void newWord() {
 
+        // Uuden sanan haku
+
         DictGame.qspeed = DictGame.SPEED;
 
         setLayoutY(0);
@@ -240,7 +288,7 @@ class FallingWord extends StackPane
         text.setFont(Font.font(20));
         bg.setRadius(text.getLayoutBounds().getWidth() / 2 + 10);
         setLayoutX(randomX());
-        
+
         buttons.update();
     }
 
@@ -282,6 +330,11 @@ class ChoiceButtons extends StackPane
     boolean correct_answer = false;
 
     public ChoiceButtons(int x, int y, int w, int h, Dictionary dict) {
+
+        /********************************************************
+         * Napit luodaan omana luokkanaan joka sisältää niiden
+         * toiminnot ja metodin tekstien päivittämiseen
+         *******************************************************/
         
         d = dict;
 
@@ -322,11 +375,6 @@ class ChoiceButtons extends StackPane
         button3.getChildren().addAll(bg3, t3);
         button3.setLayoutX(x + bg1.getWidth() + bg2.getWidth() + 3 * padding);
         button3.setLayoutY(y + padding);
-
-/*         scoreText.setText("Taso " + Integer.toString(DictGame.LEVEL) + "  Pisteet: " + Integer.toString(DictGame.SCORE));
-        scoreText.setFont(Font.font(14));
-        scoreText.setX(DictGame.SCENE_WIDTH - scoreText.getLayoutBounds().getWidth() - 5);
-        scoreText.setY(DictGame.SCENE_HEIGHT - scoreText.getLayoutBounds().getHeight() - 5); */
 
 
         //--------------- Toiminnot -------------------------
@@ -532,6 +580,9 @@ public class DictGame extends Application
         
             @Override
             public void handle(long now) {
+
+                // Jos on vastattu oikein, sana lähtee putoamaan nopeammin
+                
                 if (quickdrop == false)
                     word.drop(SPEED);
                 else if (quickdrop == true) {
